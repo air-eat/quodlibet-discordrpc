@@ -35,15 +35,19 @@ restart or open quod libet, go to file > plugins and it should show up!
 now you can enable it - and hope it doesn't crash - and go to step 2
 #### 2. creating an app for rich presence:
 go to the [discord developer webportal](https://discord.com/developers/applications) and create a new application:
+
 ![press this button!](docs/appcreation1.png)
 
 type in whatever name you want to display in discord (preferably quod libet), agree to the tos and press create:
+
 ![like this](docs/appcreation2.png)
 
 copy the "application id" from your newly created app:
+
 ![this one!!!](docs/appcreation3.png)
 
 go to file > plugins, click on the plugin and paste it into the "app id" field:
+
 ![who will actually see these tooltips](docs/appcreation4.png)
 
 and you should be done!
