@@ -7,7 +7,7 @@ i can agree that this is spaghetti code, i am not a great programmer
 
 
 ## disclaimers:
-as far as i know, **this code only works on linux** (as the original plugin throws an error if it detects macos/windows), though i haven't tested it on windows as i am too lazy
+as far as i know, **this code only works on linux** (as the original plugin purposefully throws an error if it detects macos/windows), though i haven't tested it on windows as i am too lazy
 
 i also haven't tested it well enough and it could crash; i know nobody will use this but if it does let me know by submitting an issue
 
@@ -26,7 +26,7 @@ mkdir ~/.config/quodlibet/plugins/events
 after this, cd into it and clone this repo:
 ```shell
 cd ~/.config/quodlibet/plugins/events
-git clone (INSERT REPO LINK HERE)
+git clone https://github.com/air-eat/quodlibet-discordrpc.git
 ```
 
 optionally cd into the repo and delete everything but discordrp.py
@@ -58,4 +58,4 @@ and you should be done!
 - clear everything when nothing is playing
 
 ---
-![kitty](http://placekitten.com/1000/200)
+![kitty](http://placekitten.com/1001/200)
