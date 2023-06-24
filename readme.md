@@ -11,28 +11,37 @@ as far as i know, **this code only works on linux** (as the original plugin purp
 
 i also haven't tested it well enough and it could crash; i know nobody will use this but if it does let me know by submitting an issue
 
+## faq:
+#### how do i use the album cover instead?
+working on it right now; i'll release it when i'm finished
+#### can you change the "Playing" to "Listening to"?
+this is a limitation of discord's rich presence; afaik there is nothing i can do about it
+#### how can i use my own play/pause icon?
+paste the image links into the play/pause image fields in the plugin's preferences
+
+if you have them on your computer, upload your icons online first (using services like [imgur](https://imgur.com/upload) or [catbox.moe](https://catbox.moe/))
+
 ## installation:
 #### 1. install the plugin
-install the pypresence library:
+install the pypresence library (in this case using pip):
 ```shell
 pip install pypresence
 ```
 
-create an events folder in your plugins folder if you haven't already:
+create a plugins folder if one doesn't exist and create an events folder inside it:
 ```shell
+mkdir ~/.config/quodlibet/plugins
 mkdir ~/.config/quodlibet/plugins/events
 ```
 
-after this, cd into it and clone this repo:
+after this, cd into it and download discordrp.py (in this case using wget):
 ```shell
 cd ~/.config/quodlibet/plugins/events
-git clone https://github.com/air-eat/quodlibet-discordrpc.git
+wget https://raw.githubusercontent.com/air-eat/quodlibet-discordrpc/main/discordrp.py
 ```
 
-optionally cd into the repo and delete everything but discordrp.py
-
-restart or open quod libet, go to file > plugins and it should show up! 
-now you can enable it - and hope it doesn't crash - and go to step 2
+restart or open quod libet, go to file > plugins and it should show up!  
+now you can enable it - and hope it doesn't crash - and go to step 2 below
 #### 2. creating an app for rich presence:
 go to the [discord developer webportal](https://discord.com/developers/applications) and create a new application:
 
