@@ -111,10 +111,10 @@ class DiscordStatusMessage(EventPlugin):
         if self.discordrp:
             try:
                 if app.player.paused: self.discordrp.update(details=self.length(details), state=self.length(state), 
-                                                            large_image=self.albumurl, small_image=discord_status_config.pauseimage, 
+                                                            large_image=self.albumurl, large_text="Album art", small_image=discord_status_config.pauseimage, small_text="Paused", 
                                                             buttons=[{"label": "PAUSED", "url": discord_status_config.buttonurl}])
                 else:                 self.discordrp.update(details=self.length(details), state=self.length(state), 
-                                                            large_image=self.albumurl, small_image=discord_status_config.playimage, end=self.epoch_time, 
+                                                            large_image=self.albumurl, large_text="Album art", small_image=discord_status_config.pauseimage, small_text="Playing", end=self.epoch_time, 
                                                             buttons=[{"label": self.createbar(), "url": discord_status_config.buttonurl}])
             except InvalidID:
                 self.discordrp = None
