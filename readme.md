@@ -13,7 +13,7 @@ i also haven't tested it well enough and it could crash; i know nobody will use 
 
 ## faq:
 #### why does my player freeze whenever i choose a song?
-this is due to the player waiting for the album art to be uploaded to catbox.moe; if your internet is slow or if the album art is high res this can freeze it for a while
+this is due to the player waiting for the album art to be uploaded to [litterbox.catbox.moe](https://litterbox.catbox.moe/); if your internet is slow or if the album art is high res this can freeze it for a while
 
 todo: find some way of doing this in the background
 #### can you change the "Playing" to "Listening to"?
@@ -71,4 +71,4 @@ and you should be done!
 - clear everything when nothing is playing
 
 ---
-![kitty](http://placekitten.com/999/200)
+![kitty](http://placekitten.com/1001/199)
