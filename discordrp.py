@@ -1,11 +1,3 @@
-from time import time
-from quodlibet import app
-from quodlibet.plugins import PluginConfig, ConfProp
-from quodlibet.plugins.events import EventPlugin
-from quodlibet.pattern import Pattern
-from gi.repository import Gtk
-from quodlibet.qltk.tracker import TimeTracker
-
 try:
     from pypresence import Presence, InvalidID, DiscordNotFound
 except ImportError:
@@ -14,17 +6,28 @@ except ImportError:
 
 QL_DISCORD_RP_ID = '# discord_status: Set Discord status as current song.'
 
+from senf import fsn2uri
 from math import floor
 from quodlibet import _, app
 from quodlibet.plugins import PluginConfig, ConfProp
 from quodlibet.plugins.events import EventPlugin
 from quodlibet.pattern import Pattern
 from gi.repository import Gtk
+from time import time
+from quodlibet.qltk.tracker import TimeTracker
+from urllib.parse import unquote, urlparse
+
 try:
     from pypresence import Presence, InvalidID, DiscordNotFound
 except ImportError:
     from quodlibet.plugins import MissingModulePluginException
     raise MissingModulePluginException("pypresence")
+
+try:
+    import requests
+except ImportError:
+    from quodlibet.plugins import MissingModulePluginException
+    raise MissingModulePluginException("requests")    
 
 # defaults
 QL_DISCORD_RP_ID = '0'
@@ -60,13 +63,35 @@ class DiscordStatusMessage(EventPlugin):
         self.discordrp = None
         self._tracker = TimeTracker(app.player)
         self._tracker.connect('tick', self._on_tick, app.player)
+        self.__image_fp = None
+        self.albumurl = None
+
+    def _get_image_uri(self, song): # see https://github.com/quodlibet/quodlibet/blob/main/quodlibet/ext/events/notify.py#L330
+        fileobj = app.cover_manager.get_cover(song)
+        if self.__image_fp is not None:
+            self.__image_fp.close()
+            self.__image_fp = None
+        self.__image_fp = fileobj
+        if fileobj:
+            return fsn2uri(fileobj.name)
+        return u""
+
+    def length(self, string):
+        while len(string) < 2: string += "."
+        if len(string) > 32: string = string[0:29] + "..."
+        return string
+
+    def uploadtocatbox(self, uri):
+        pr = requests.post("https://litterbox.catbox.moe/resources/internals/api.php", 
+                            data={"reqtype": "fileupload", "time": "1h"}, files={"fileToUpload": open(unquote(urlparse(uri).path), "rb")})
+        return pr.text
 
     def createbar(self):
         bar = "["
         percentage = (app.player.get_position() // 1000) / app.player.info("~#length")
         boldbars = floor(30 * percentage)
         for _ in range(boldbars): bar += "━"
-        if len(bar) >= 31: #if already full
+        if len(bar) >= 31: # if already full (as backup)
             bar = bar[:-1] + "⬤"
         else:
             bar += "⬤"
@@ -85,11 +110,11 @@ class DiscordStatusMessage(EventPlugin):
 
         if self.discordrp:
             try:
-                if app.player.paused: self.discordrp.update(details=details, state=state, 
-                                                            large_image=discord_status_config.largeimage, small_image=discord_status_config.pauseimage, 
+                if app.player.paused: self.discordrp.update(details=self.length(details), state=self.length(state), 
+                                                            large_image=self.albumurl, small_image=discord_status_config.pauseimage, 
                                                             buttons=[{"label": "PAUSED", "url": discord_status_config.buttonurl}])
-                else:                 self.discordrp.update(details=details, state=state, 
-                                                            large_image=discord_status_config.largeimage, small_image=discord_status_config.playimage, end=self.epoch_time, 
+                else:                 self.discordrp.update(details=self.length(details), state=self.length(state), 
+                                                            large_image=self.albumurl, small_image=discord_status_config.playimage, end=self.epoch_time, 
                                                             buttons=[{"label": self.createbar(), "url": discord_status_config.buttonurl}])
             except InvalidID:
                 self.discordrp = None
@@ -113,6 +138,8 @@ class DiscordStatusMessage(EventPlugin):
 
     def plugin_on_song_started(self, song):
         self.song = song
+        try: self.albumurl = self.uploadtocatbox(self._get_image_uri(self.song))
+        except: self.albumurl = discord_status_config.largeimage
         self.handle_play()
 
     def plugin_on_paused(self):
@@ -203,7 +230,7 @@ class DiscordStatusMessage(EventPlugin):
         largeimage_config = Gtk.Entry()
         largeimage_config.set_text(discord_status_config.largeimage)
         largeimage_config.connect('changed', largeimage_changed)
-        largeimage_config_box.pack_start(Gtk.Label(label=_('Album art')), False, True, 0)
+        largeimage_config_box.pack_start(Gtk.Label(label=_('Fallback album art')), False, True, 0)
         largeimage_config_box.pack_start(largeimage_config, True, True, 0)
 
         vb.pack_start(status_line1_box, True, True, 0)

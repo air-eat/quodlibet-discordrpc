@@ -12,8 +12,10 @@ as far as i know, **this code only works on linux** (as the original plugin purp
 i also haven't tested it well enough and it could crash; i know nobody will use this but if it does let me know by submitting an issue
 
 ## faq:
-#### how do i use the album cover instead?
-working on it right now; i'll release it when i'm finished
+#### why does my player freeze whenever i choose a song?
+this is due to the player waiting for the album art to be uploaded to catbox.moe; if your internet is slow or if the album art is high res this can freeze it for a while
+
+todo: find some way of doing this in the background
 #### can you change the "Playing" to "Listening to"?
 this is a limitation of discord's rich presence; afaik there is nothing i can do about it
 #### how can i use my own play/pause icon?
@@ -23,9 +25,10 @@ if you have them on your computer, upload your icons online first (using service
 
 ## installation:
 #### 1. install the plugin
-install the pypresence library (in this case using pip):
+install the pypresence and requests dependencies (in this case using pip):
 ```shell
 pip install pypresence
+pip install requests
 ```
 
 create a plugins folder if one doesn't exist and create an events folder inside it:
@@ -62,9 +65,10 @@ go to file > plugins, click on the plugin and paste it into the "app id" field:
 and you should be done!
 
 ## todo:
-- implement album art
-    - see [foobar2000's solution for uploading](https://github.com/s0hv/rust-imgur-upload)
+- update example.gif to show album art too
+- find way to not freeze the player while uploading album art
+ - nowhere near enough smarts for that; will probably never happen
 - clear everything when nothing is playing
 
 ---
-![kitty](http://placekitten.com/1001/200)
+![kitty](http://placekitten.com/999/200)
