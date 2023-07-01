@@ -7,15 +7,15 @@ i can agree that this is spaghetti code, i am not a great programmer
 
 
 ## disclaimers:
-as far as i know, **this code only works on linux** (as the original plugin purposefully throws an error if it detects macos/windows), though i haven't tested it on windows as i am too lazy
+as far as i know, **this plugin only works on linux** (as the original plugin purposefully throws an error if it detects macos/windows), though i haven't tested it on windows as i am too lazy
 
 i also haven't tested it well enough and it could crash; i know nobody will use this but if it does let me know by submitting an issue
 
 ## faq:
 #### why does my player freeze whenever i choose a song?
-this is due to the player waiting for the album art to be uploaded to [litterbox.catbox.moe](https://litterbox.catbox.moe/); if your internet is slow or if the album art is high res this can freeze it for a while
+this is due to the player waiting for the album art to be uploaded to [litterbox.catbox.moe](https://litterbox.catbox.moe/); this should only be for a second but it is still noticable
 
-todo: find some way of doing this in the background
+note that there is a timeout after 5 seconds
 #### can you change the "Playing" to "Listening to"?
 this is a limitation of discord's rich presence; afaik there is nothing i can do about it
 #### how can i use my own play/pause icon?
@@ -25,10 +25,11 @@ if you have them on your computer, upload your icons online first (using service
 
 ## installation:
 #### 1. install the plugin
-install the pypresence and requests dependencies (in this case using pip):
+install pypresence (used for rich presence), pillow (used to scale down album art images) and requests (used to send images to [litterbox.catbox.moe](https://litterbox.catbox.moe/)) (in this case using pip):
 ```shell
 pip install pypresence
 pip install requests
+pip install pillow
 ```
 
 create a plugins folder if one doesn't exist and create an events folder inside it:

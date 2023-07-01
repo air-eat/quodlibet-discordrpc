@@ -1,9 +1,3 @@
-try:
-    from pypresence import Presence, InvalidID, DiscordNotFound
-except ImportError:
-    from quodlibet.plugins import MissingModulePluginException
-    raise MissingModulePluginException("pypresence")
-
 QL_DISCORD_RP_ID = '# discord_status: Set Discord status as current song.'
 
 from senf import fsn2uri
@@ -16,7 +10,6 @@ from gi.repository import Gtk
 from time import time
 from quodlibet.qltk.tracker import TimeTracker
 from urllib.parse import unquote, urlparse
-
 try:
     from pypresence import Presence, InvalidID, DiscordNotFound
 except ImportError:
@@ -29,6 +22,12 @@ except ImportError:
     from quodlibet.plugins import MissingModulePluginException
     raise MissingModulePluginException("requests")    
 
+try:
+    from PIL import Image
+except ImportError:
+    from quodlibet.plugins import MissingModulePluginException
+    raise MissingModulePluginException("pillow")   
+
 # defaults
 QL_DISCORD_RP_ID = '0'
 CONFIG_DEFAULT_RP_LINE1 = "<title>"
@@ -37,6 +36,7 @@ DEF_PAUSE_IMAGE = "https://cdn-icons-png.flaticon.com/512/9974/9974128.png"
 DEF_PLAY_IMAGE = "https://cdn-icons-png.flaticon.com/512/9974/9974140.png"
 DEF_URL = "https://placekitten.com"
 QL_LARGE_IMAGE = "https://cdn.discordapp.com/emojis/688028506252115999.gif"
+DEF_LOADING_IMAGE = "https://media.tenor.com/wpSo-8CrXqUAAAAi/loading-loading-forever.gif"
 class DiscordStatusConfig:
     _config = PluginConfig(__name__)
 
@@ -47,6 +47,7 @@ class DiscordStatusConfig:
     pauseimage = ConfProp(_config, "pauseimage", DEF_PAUSE_IMAGE)
     buttonurl = ConfProp(_config, "buttonurl", DEF_URL)
     largeimage = ConfProp(_config, "largeimage", QL_LARGE_IMAGE)
+    loadingimage = ConfProp(_config, "loadingimage", DEF_LOADING_IMAGE)
 
 
 discord_status_config = DiscordStatusConfig()
@@ -82,8 +83,11 @@ class DiscordStatusMessage(EventPlugin):
         return string
 
     def uploadtocatbox(self, uri):
-        pr = requests.post("https://litterbox.catbox.moe/resources/internals/api.php", 
-                            data={"reqtype": "fileupload", "time": "1h"}, files={"fileToUpload": open(unquote(urlparse(uri).path), "rb")})
+        img = Image.open(unquote(urlparse(uri).path)); img = img.convert('RGB')
+        img = img.resize((60, 60),Image.ANTIALIAS) # 60x60 might seem low but it's the size of the large image preview
+        img.save('/tmp/quodlibet-albumart.jpg', optimize=True, quality=90)
+        pr = requests.post("https://litterbox.catbox.moe/resources/internals/api.php", timeout=5,
+                            data={"reqtype": "fileupload", "time": "1h"}, files={"fileToUpload": open("/tmp/quodlibet-albumart.jpg", "rb")})
         return pr.text
 
     def createbar(self):
@@ -104,17 +108,16 @@ class DiscordStatusMessage(EventPlugin):
             try:
                 self.discordrp = Presence(discord_status_config.rp_id, pipe=0)
                 self.discordrp.connect()
-            # (DiscordNotFound, ConnectionRefusedError)
             except (DiscordNotFound, ConnectionRefusedError):
                 self.discordrp = None
 
         if self.discordrp:
             try:
                 if app.player.paused: self.discordrp.update(details=self.length(details), state=self.length(state), 
-                                                            large_image=self.albumurl, large_text="Album art", small_image=discord_status_config.pauseimage, small_text="Paused", 
+                                                            large_image=self.albumurl, small_image=discord_status_config.pauseimage, 
                                                             buttons=[{"label": "PAUSED", "url": discord_status_config.buttonurl}])
                 else:                 self.discordrp.update(details=self.length(details), state=self.length(state), 
-                                                            large_image=self.albumurl, large_text="Album art", small_image=discord_status_config.playimage, small_text="Playing", end=self.epoch_time, 
+                                                            large_image=self.albumurl, small_image=discord_status_config.playimage, end=self.epoch_time, 
                                                             buttons=[{"label": self.createbar(), "url": discord_status_config.buttonurl}])
             except InvalidID:
                 self.discordrp = None
@@ -138,8 +141,10 @@ class DiscordStatusMessage(EventPlugin):
 
     def plugin_on_song_started(self, song):
         self.song = song
+        self.albumurl = discord_status_config.loadingimage
+        self.handle_play() # update first with loading gif
         try: self.albumurl = self.uploadtocatbox(self._get_image_uri(self.song))
-        except: self.albumurl = discord_status_config.largeimage
+        except: self.albumurl = discord_status_config.largeimage # if no album art
         self.handle_play()
 
     def plugin_on_paused(self):
@@ -175,6 +180,8 @@ class DiscordStatusMessage(EventPlugin):
             discord_status_config.buttonurl = entry.get_text()
         def largeimage_changed(entry):
             discord_status_config.largeimage = entry.get_text()
+        def loadingimage_changed(entry):
+            discord_status_config.loadingimage = entry.get_text()
 
         # TODO: rewrite using defs
         status_line1_box = Gtk.HBox(spacing=6)
@@ -233,6 +240,14 @@ class DiscordStatusMessage(EventPlugin):
         largeimage_config_box.pack_start(Gtk.Label(label=_('Fallback album art')), False, True, 0)
         largeimage_config_box.pack_start(largeimage_config, True, True, 0)
 
+        loadingimage_config_box = Gtk.HBox(spacing=3)
+        loadingimage_config_box.set_border_width(3)
+        loadingimage_config = Gtk.Entry()
+        loadingimage_config.set_text(discord_status_config.loadingimage)
+        loadingimage_config.connect('changed', loadingimage_changed)
+        loadingimage_config_box.pack_start(Gtk.Label(label=_('Loading image')), False, True, 0)
+        loadingimage_config_box.pack_start(loadingimage_config, True, True, 0)
+
         vb.pack_start(status_line1_box, True, True, 0)
         vb.pack_start(status_line2_box, True, True, 0)
         vb.pack_start(rp_id_config_box, True, True, 0)
@@ -240,6 +255,7 @@ class DiscordStatusMessage(EventPlugin):
         vb.pack_start(pauseimage_config_box, True, True, 0)
         vb.pack_start(buttonurl_config_box, True, True, 0)
         vb.pack_start(largeimage_config_box, True, True, 0)
+        vb.pack_start(loadingimage_config_box, True, True, 0)
 
         return vb
 
