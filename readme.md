@@ -66,12 +66,9 @@ go to file > plugins, click on the plugin and paste it into the "app id" field:
 and you should be done!
 
 ## todo:
-- update example.gif to show album art too
+- actually update this
 - find way to not freeze the player while uploading album art
-  - scale the album art down to minimize time?
-    - do this without another dependency?
-  - nowhere near enough smarts for that; will probably never happen
 - clear everything when nothing is playing
 
 ---
-![kitty](http://placekitten.com/1001/199)
+![kitty!!!!!!](http://placekitten.com/1000/200)
