@@ -15,7 +15,7 @@ i also haven't tested it well enough and it could crash; i know nobody will use 
 #### why does my player freeze whenever i choose a song?
 this is due to the player waiting for the album art to be uploaded to [litterbox.catbox.moe](https://litterbox.catbox.moe/); this should only be for a second but it is still noticable
 
-note that there is a timeout after 5 seconds
+note that there is a timeout after 10 seconds
 #### can you change the "Playing" to "Listening to"?
 this is a limitation of discord's rich presence; afaik there is nothing i can do about it
 #### how can i use my own play/pause icon?
