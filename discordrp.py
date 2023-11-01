@@ -10,6 +10,7 @@ from gi.repository import Gtk
 from time import time
 from quodlibet.qltk.tracker import TimeTracker
 from urllib.parse import unquote, urlparse
+import asyncio
 try:
     from pypresence import Presence, InvalidID, DiscordNotFound
 except ImportError:
@@ -54,8 +55,8 @@ discord_status_config = DiscordStatusConfig()
 
 
 class DiscordStatusMessage(EventPlugin):
-    PLUGIN_ID = _("Discord status message")
-    PLUGIN_NAME = _("Discord Status Message")
+    PLUGIN_ID = _("Discord-rp")
+    PLUGIN_NAME = _("Discord Rich Presence")
     PLUGIN_DESC = _("Uses Discord Rich Presence (using pypresence) to show everyone what you're listening to")
     VERSION = "0.1"
 
@@ -66,6 +67,7 @@ class DiscordStatusMessage(EventPlugin):
         self._tracker.connect('tick', self._on_tick, app.player)
         self.__image_fp = None
         self.albumurl = None
+        self.albumname = None
 
     def _get_image_uri(self, song): # see https://github.com/quodlibet/quodlibet/blob/main/quodlibet/ext/events/notify.py#L330
         fileobj = app.cover_manager.get_cover(song)
@@ -83,23 +85,26 @@ class DiscordStatusMessage(EventPlugin):
         return string
 
     def uploadtocatbox(self, uri):
+        loop = asyncio.get_event_loop()
         img = Image.open(unquote(urlparse(uri).path)); img = img.convert('RGB')
-        img = img.resize((60, 60),Image.ANTIALIAS) # 60x60 might seem low but it's the size of the large image preview
-        img.save('/tmp/quodlibet-albumart.jpg', optimize=True, quality=90)
-        pr = requests.post("https://litterbox.catbox.moe/resources/internals/api.php", timeout=5,
-                            data={"reqtype": "fileupload", "time": "1h"}, files={"fileToUpload": open("/tmp/quodlibet-albumart.jpg", "rb")})
-        return pr.text
+        img = img.resize((60, 60)) # 60x60 might seem low but it's the size of the large image preview
+        img.save('/tmp/quodlibet-albumart.jpg', optimize=True, quality=75)
+        try:
+            return requests.post("https://litterbox.catbox.moe/resources/internals/api.php", timeout=10,
+                    data={"reqtype": "fileupload", "time": "1h"}, files={"fileToUpload": open("/tmp/quodlibet-albumart.jpg", "rb")}).text
+        except: pass
+        return discord_status_config.largeimage
 
     def createbar(self):
         bar = "["
         percentage = (app.player.get_position() // 1000) / app.player.info("~#length")
-        boldbars = floor(30 * percentage)
+        boldbars = floor(28 * percentage)
         for _ in range(boldbars): bar += "━"
-        if len(bar) >= 31: # if already full (as backup)
+        if len(bar) >= 28: # if already full (as backup)
             bar = bar[:-1] + "⬤"
         else:
             bar += "⬤"
-            for _ in range(29 - boldbars): bar += "─"
+            for _ in range(26 - boldbars): bar += "─"
         bar += "]"
         return bar
 
@@ -114,10 +119,10 @@ class DiscordStatusMessage(EventPlugin):
         if self.discordrp:
             try:
                 if app.player.paused: self.discordrp.update(details=self.length(details), state=self.length(state), 
-                                                            large_image=self.albumurl, small_image=discord_status_config.pauseimage, 
+                                                            large_image=self.albumurl, small_image=discord_status_config.pauseimage, large_text=self.albumname, small_text="Paused",
                                                             buttons=[{"label": "PAUSED", "url": discord_status_config.buttonurl}])
                 else:                 self.discordrp.update(details=self.length(details), state=self.length(state), 
-                                                            large_image=self.albumurl, small_image=discord_status_config.playimage, end=self.epoch_time, 
+                                                            large_image=self.albumurl, small_image=discord_status_config.playimage, end=self.epoch_time, large_text=self.albumname, small_text="Playing",
                                                             buttons=[{"label": self.createbar(), "url": discord_status_config.buttonurl}])
             except InvalidID:
                 self.discordrp = None
@@ -140,11 +145,16 @@ class DiscordStatusMessage(EventPlugin):
         self.handle_play()
 
     def plugin_on_song_started(self, song):
+        self.updatestuff(song)
+        
+
+    def updatestuff(self, song):
         self.song = song
-        self.albumurl = discord_status_config.loadingimage
-        self.handle_play() # update first with loading gif
-        try: self.albumurl = self.uploadtocatbox(self._get_image_uri(self.song))
-        except: self.albumurl = discord_status_config.largeimage # if no album art
+        if self.albumname != Pattern("<album>") % self.song or self.albumurl == discord_status_config.largeimage:
+            self.albumurl = discord_status_config.loadingimage
+            self.handle_play() # update first with loading gif
+            self.albumurl = self.uploadtocatbox(self._get_image_uri(self.song))
+            self.albumname = Pattern("<album>") % self.song
         self.handle_play()
 
     def plugin_on_paused(self):
@@ -258,5 +268,4 @@ class DiscordStatusMessage(EventPlugin):
         vb.pack_start(loadingimage_config_box, True, True, 0)
 
         return vb
-
 
